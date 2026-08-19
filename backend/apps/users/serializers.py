@@ -13,12 +13,15 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["email", "password"]
+        fields = ["email", "password", "first_name",
+            "last_name"]
 
     def create(self, validated_data):
         return User.objects.create_user(
             email=validated_data["email"],
             password=validated_data["password"],
+            first_name=validated_data["first_name"],
+            last_name=validated_data["last_name"],
         )
 
 class LoginSerializer(serializers.Serializer):
@@ -54,3 +57,8 @@ class LoginSerializer(serializers.Serializer):
         attrs["user"] = user
 
         return attrs
+
+class MeSerializer(serializers.ModelSerializer):
+    class Meta:
+            model = User
+            fields = ["id", "email", "first_name", "last_name" ]

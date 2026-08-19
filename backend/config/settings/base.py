@@ -2,6 +2,17 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -26,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework_simplejwt.token_blacklist",
 
     "rest_framework",
     "rest_framework_simplejwt",
