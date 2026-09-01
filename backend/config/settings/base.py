@@ -142,6 +142,14 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.AllowAny",
     ],
 }
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+]
 
-
-CORS_ALLOWED_ORIGINS = []
+CORS_ALLOWED_ORIGINS = ["http://localhost:5173",]
+CORS_ALLOW_CREDENTIALS = True
+REFRESH_COOKIE_NAME = "refresh_token"
+REFRESH_COOKIE_HTTP_ONLY = True
+REFRESH_COOKIE_SECURE = False
+REFRESH_COOKIE_SAMESITE = "Lax"
+REFRESH_COOKIE_PATH = "/"

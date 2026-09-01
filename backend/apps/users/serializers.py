@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model, authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework import serializers
 
 User = get_user_model()
@@ -62,3 +63,31 @@ class MeSerializer(serializers.ModelSerializer):
     class Meta:
             model = User
             fields = ["id", "email", "first_name", "last_name" ]
+
+
+
+class CookieTokenRefreshSerializer(TokenRefreshSerializer):
+
+    def to_internal_value(self, data):
+        data = data.copy()
+
+        refresh_token = self.context["request"].COOKIES.get("refresh_token")
+
+        if not refresh_token:
+            from rest_framework.exceptions import AuthenticationFailed
+            raise AuthenticationFailed("Refresh token not found.")
+
+        data["refresh"] = refresh_token
+
+        return super().to_internal_value(data)
+
+    def validate(self, attrs):
+        refresh_token = self.context["request"].COOKIES.get("refresh_token")
+
+        if not refresh_token:
+            from rest_framework.exceptions import AuthenticationFailed
+            raise AuthenticationFailed("Refresh token not found.")
+
+        attrs["refresh"] = refresh_token
+
+        return super().validate(attrs)

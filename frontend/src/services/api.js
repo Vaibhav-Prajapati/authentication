@@ -1,28 +1,20 @@
 import axios from 'axios';
-import { getAccessToken, getRefreshToken, setAccessToken, clearTokens } from './token';
+import { getAccessToken, setAccessToken, clearTokens } from './token';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
 let isRefreshing = false;
-
 let refreshSubscribers = [];
-
-// --------------------------------------------------
-// Add request to queue while token is refreshing
-// --------------------------------------------------
 
 const subscribeTokenRefresh = (callback) => {
   refreshSubscribers.push(callback);
 };
-
-// --------------------------------------------------
-// Notify all queued requests after refresh succeeds
-// --------------------------------------------------
 
 const onRefreshed = (newAccessToken) => {
   refreshSubscribers.forEach((callback) => {
@@ -32,63 +24,77 @@ const onRefreshed = (newAccessToken) => {
   refreshSubscribers = [];
 };
 
-// --------------------------------------------------
-// Request interceptor
-// --------------------------------------------------
+const getCSRFToken = () => {
+  const name = 'csrftoken=';
+
+  const cookies = document.cookie.split(';');
+
+  for (let cookie of cookies) {
+    cookie = cookie.trim();
+
+    if (cookie.startsWith(name)) {
+      return decodeURIComponent(cookie.substring(name.length));
+    }
+  }
+
+  return null;
+};
+
+/*
+|--------------------------------------------------------------------------
+| Request Interceptor
+|--------------------------------------------------------------------------
+*/
 
 api.interceptors.request.use(
   (config) => {
+    console.log('Request Interceptor Success');
+
     const accessToken = getAccessToken();
 
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
+    const csrfToken = getCSRFToken();
+
+    if (csrfToken) {
+      config.headers['X-CSRFToken'] = csrfToken;
+    }
+
     return config;
   },
   (error) => {
+    console.log('Request Interceptor Error');
     return Promise.reject(error);
   }
 );
 
-// --------------------------------------------------
-// Response interceptor
-// --------------------------------------------------
+/*
+|--------------------------------------------------------------------------
+| Response Interceptor
+|--------------------------------------------------------------------------
+*/
 
 api.interceptors.response.use(
-  // Successful response
   (response) => {
     return response;
   },
 
-  // Error response
   async (error) => {
     const originalRequest = error.config;
 
-    // ------------------------------------------------
-    // Check whether response is 401
-    // ------------------------------------------------
-
-    if (error.response?.status !== 401) {
+    if (error.response?.status !== 401 || originalRequest._retry) {
       return Promise.reject(error);
     }
 
-    // ------------------------------------------------
-    // Prevent refresh endpoint from causing
-    // another refresh attempt
-    // ------------------------------------------------
+    /*
+        |--------------------------------------------------------------------------
+        | Prevent refresh endpoint from refreshing itself
+        |--------------------------------------------------------------------------
+        */
 
-    if (originalRequest.url?.includes('/auth/token/refresh/')) {
-      clearTokens();
-
-      return Promise.reject(error);
-    }
-
-    // ------------------------------------------------
-    // Prevent infinite retry loop
-    // ------------------------------------------------
-
-    if (originalRequest._retry) {
+    if (originalRequest.url?.includes('/token/refresh/')) {
       clearTokens();
 
       return Promise.reject(error);
@@ -96,22 +102,11 @@ api.interceptors.response.use(
 
     originalRequest._retry = true;
 
-    const refreshToken = getRefreshToken();
-
-    // ------------------------------------------------
-    // No refresh token available
-    // ------------------------------------------------
-
-    if (!refreshToken) {
-      clearTokens();
-
-      return Promise.reject(error);
-    }
-
-    // ------------------------------------------------
-    // If another request is already refreshing the token,
-    // put this request into the queue
-    // ------------------------------------------------
+    /*
+        |--------------------------------------------------------------------------
+        | If another request is already refreshing the token
+        |--------------------------------------------------------------------------
+        */
 
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
@@ -128,54 +123,30 @@ api.interceptors.response.use(
       });
     }
 
-    // ------------------------------------------------
-    // Start token refresh
-    // ------------------------------------------------
+    /*
+        |--------------------------------------------------------------------------
+        | Start token refresh
+        |--------------------------------------------------------------------------
+        */
 
     isRefreshing = true;
 
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/auth/token/refresh/`,
-        {
-          refresh: refreshToken,
-        }
-      );
+      const response = await api.post('/token/refresh/');
 
       const newAccessToken = response.data.access;
 
-      // ------------------------------------------------
-      // Save new access token
-      // ------------------------------------------------
-
       setAccessToken(newAccessToken);
 
-      // ------------------------------------------------
-      // Notify queued requests
-      // ------------------------------------------------
-
       onRefreshed(newAccessToken);
-
-      // ------------------------------------------------
-      // Retry original request
-      // ------------------------------------------------
 
       originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
       return api(originalRequest);
     } catch (refreshError) {
-      // ------------------------------------------------
-      // Refresh token is invalid / expired
-      // ------------------------------------------------
-
       clearTokens();
 
-      // Notify queued requests that refresh failed
-      refreshSubscribers.forEach((callback) => {
-        callback(null);
-      });
-
-      refreshSubscribers = [];
+      onRefreshed(null);
 
       return Promise.reject(refreshError);
     } finally {
