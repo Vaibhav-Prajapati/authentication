@@ -1,7 +1,17 @@
+
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { loginUser, clearAuthError } from '../features/auth/authSlice';
+import { Link, useNavigate } from 'react-router-dom';
+
+import {
+  loginUser,
+  clearAuthError,
+} from '../features/auth/authSlice';
+
+import Button from '../components/ui/Buttons';
+import Input from '../components/ui/Input';
+import Card from '../components/ui/Card';
+import Alert from '../components/ui/Alert';
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -38,7 +48,8 @@ const Login = () => {
 
       navigate('/dashboard');
     } catch (error) {
-      // Login error is already stored in Redux
+      console.error(error)
+      // Login error is already stored in Redux.
     }
   };
 
@@ -79,7 +90,9 @@ const Login = () => {
     }
 
     if (error.detail) {
-      return error.detail;
+      return Array.isArray(error.detail)
+        ? error.detail[0]
+        : error.detail;
     }
 
     if (error.non_field_errors) {
@@ -91,59 +104,93 @@ const Login = () => {
     return 'Login failed. Please check your credentials.';
   };
 
+  const generalError = getGeneralError();
+
   return (
-    <div>
-      <h2>Login</h2>
+    <main className="min-h-screen bg-gray-50 px-4 py-10 sm:py-16">
+      <div className="mx-auto flex w-full max-w-md flex-col justify-center">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            Welcome back
+          </h1>
 
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="email">Email</label>
-
-          <input
-            id="email"
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            disabled={isLoading}
-          />
-
-          {getFieldError('email') && <div>{getFieldError('email')}</div>}
+          <p className="mt-2 text-sm text-gray-600">
+            Sign in to your account to continue.
+          </p>
         </div>
 
-        <div>
-          <label htmlFor="password">Password</label>
+        {/* Login Card */}
+        <Card>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* General API error */}
+            {generalError && (
+              <Alert type="error">
+                {generalError}
+              </Alert>
+            )}
 
-          <input
-            id="password"
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            disabled={isLoading}
-          />
+            {/* Client-side validation */}
+            {validationError && (
+              <Alert type="error">
+                {validationError}
+              </Alert>
+            )}
 
-          {getFieldError('password') && <div>{getFieldError('password')}</div>}
-        </div>
+            {/* Email */}
+            <Input
+              id="email"
+              type="email"
+              name="email"
+              label="Email"
+              placeholder="you@example.com"
+              value={formData.email}
+              onChange={handleChange}
+              disabled={isLoading}
+              autoComplete="email"
+              error={getFieldError('email')}
+            />
 
-        {validationError && <div>{validationError}</div>}
+            {/* Password */}
+            <Input
+              id="password"
+              type="password"
+              name="password"
+              label="Password"
+              placeholder="Enter your password"
+              value={formData.password}
+              onChange={handleChange}
+              disabled={isLoading}
+              autoComplete="current-password"
+              error={getFieldError('password')}
+            />
 
-        {getGeneralError() && <div>{getGeneralError()}</div>}
+            {/* Submit */}
+            <Button
+              type="submit"
+              loading={isLoading}
+            >
+              Login
+            </Button>
+          </form>
 
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Logging in...' : 'Login'}
-        </button>
-      </form>
-
-      <div>
-        <span>Don't have an account? </span>
-
-        <button type="button" onClick={() => navigate('/register')} disabled={isLoading}>
-          Register
-        </button>
+          {/* Register */}
+          <div className="mt-6 border-t border-gray-100 pt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{' '}
+              <Link
+                to="/register"
+                className="font-semibold text-blue-600 transition-colors hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                Create an account
+              </Link>
+            </p>
+          </div>
+        </Card>
       </div>
-    </div>
+    </main>
   );
 };
 
 export default Login;
+

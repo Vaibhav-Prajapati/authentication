@@ -1,7 +1,14 @@
+
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+
 import { registerUser } from '../features/auth/authSlice';
+
+import Button from '../components/ui/Buttons';
+import Input from '../components/ui/Input';
+import Card from '../components/ui/Card';
+import Alert from '../components/ui/Alert';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -34,7 +41,13 @@ const Register = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const { email, password, password2, first_name, last_name } = formData;
+    const {
+      email,
+      password,
+      password2,
+      first_name,
+      last_name,
+    } = formData;
 
     if (!email) {
       setValidationError('Email is required');
@@ -89,96 +102,129 @@ const Register = () => {
   };
 
   return (
-    <div>
-      <h2>Create Account</h2>
+    <main className="min-h-screen bg-gray-50 px-4 py-10 sm:py-16">
+      <div className="mx-auto flex w-full max-w-md flex-col justify-center">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            Create your account
+          </h1>
 
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="first_name">First Name</label>
-
-          <input
-            id="first_name"
-            type="text"
-            name="first_name"
-            value={formData.first_name}
-            onChange={handleChange}
-          />
-
-          {getFieldError('first_name') && (
-            <div>{getFieldError('first_name')}</div>
-          )}
+          <p className="mt-2 text-sm text-gray-600">
+            Sign up to get started.
+          </p>
         </div>
 
-        <div>
-          <label htmlFor="last_name">Last Name</label>
+        {/* Registration Card */}
+        <Card>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Server-side general error */}
+            {error?.detail && (
+              <Alert type="error">
+                {Array.isArray(error.detail)
+                  ? error.detail[0]
+                  : error.detail}
+              </Alert>
+            )}
 
-          <input
-            id="last_name"
-            type="text"
-            name="last_name"
-            value={formData.last_name}
-            onChange={handleChange}
-          />
+            {/* Client-side validation error */}
+            {validationError && (
+              <Alert type="error">
+                {validationError}
+              </Alert>
+            )}
 
-          {getFieldError('last_name') && (
-            <div>{getFieldError('last_name')}</div>
-          )}
-        </div>
+            {/* Name fields */}
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <Input
+                id="first_name"
+                name="first_name"
+                type="text"
+                label="First Name"
+                placeholder="John"
+                value={formData.first_name}
+                onChange={handleChange}
+                autoComplete="given-name"
+                error={getFieldError('first_name')}
+              />
 
-        <div>
-          <label htmlFor="email">Email</label>
+              <Input
+                id="last_name"
+                name="last_name"
+                type="text"
+                label="Last Name"
+                placeholder="Doe"
+                value={formData.last_name}
+                onChange={handleChange}
+                autoComplete="family-name"
+                error={getFieldError('last_name')}
+              />
+            </div>
 
-          <input
-            id="email"
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-          />
+            {/* Email */}
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              label="Email"
+              placeholder="you@example.com"
+              value={formData.email}
+              onChange={handleChange}
+              autoComplete="email"
+              error={getFieldError('email')}
+            />
 
-          {getFieldError('email') && (
-            <div>{getFieldError('email')}</div>
-          )}
-        </div>
+            {/* Password */}
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              label="Password"
+              placeholder="Enter your password"
+              value={formData.password}
+              onChange={handleChange}
+              autoComplete="new-password"
+              error={getFieldError('password')}
+            />
 
-        <div>
-          <label htmlFor="password">Password</label>
+            {/* Confirm Password */}
+            <Input
+              id="password2"
+              name="password2"
+              type="password"
+              label="Confirm Password"
+              placeholder="Confirm your password"
+              value={formData.password2}
+              onChange={handleChange}
+              autoComplete="new-password"
+            />
 
-          <input
-            id="password"
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-          />
+            {/* Submit */}
+            <Button
+              type="submit"
+              loading={isLoading}
+            >
+              Create Account
+            </Button>
+          </form>
 
-          {getFieldError('password') && (
-            <div>{getFieldError('password')}</div>
-          )}
-        </div>
-
-        <div>
-          <label htmlFor="password2">Confirm Password</label>
-
-          <input
-            id="password2"
-            type="password"
-            name="password2"
-            value={formData.password2}
-            onChange={handleChange}
-          />
-        </div>
-
-        {validationError && (
-          <div>{validationError}</div>
-        )}
-
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Creating Account...' : 'Create Account'}
-        </button>
-      </form>
-    </div>
+          {/* Login Link */}
+          <div className="mt-6 border-t border-gray-100 pt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Already have an account?{' '}
+              <Link
+                to="/login"
+                className="font-semibold text-blue-600 transition-colors hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                Sign in
+              </Link>
+            </p>
+          </div>
+        </Card>
+      </div>
+    </main>
   );
 };
 
 export default Register;
+
