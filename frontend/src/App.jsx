@@ -7,6 +7,8 @@ import './App.css';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import ProtectedRoute from './components/ProtectedRoute';
+import PublicRoute from './components/PublicRoute';
 
 import {
   initializeCSRF,
@@ -21,8 +23,6 @@ function App() {
   const isInitializing = useSelector(
     selectAuthInitializing
   );
-
-  console.log("isInit", isInitializing);
 
   const hasInitialized = useRef(false);
 
@@ -61,7 +61,7 @@ function App() {
          *
          * This is not an application error.
          */
-        console.log('No active session.');
+        console.log('No active session.' , error);
       }
     };
 
@@ -86,6 +86,7 @@ function App() {
   return (
     <>
       <Routes>
+        <Route element={<PublicRoute />} >
         <Route
           path="/"
           element={<Register />}
@@ -100,11 +101,9 @@ function App() {
           path="/login"
           element={<Login />}
         />
+        </Route>
 
-        <Route
-          path="/dashboard"
-          element={<Dashboard />}
-        />
+       <Route element={<ProtectedRoute />}> <Route path="/dashboard" element={<Dashboard />} /> </Route>
       </Routes>
     </>
   );

@@ -268,7 +268,7 @@ export const logoutUser = createAsyncThunk(
       const response = await api.post(
         '/auth/logout/'
       );
-
+ clearTokens();
       return response.data;
 
     } catch (error) {
@@ -369,29 +369,9 @@ const authSlice = createSlice({
         state.error = null;
       })
 
-      .addCase(registerUser.fulfilled, (state, action) => {
+      .addCase(registerUser.fulfilled, (state) => {
         state.isLoading = false;
         state.error = null;
-
-        const {
-          user,
-          access,
-        } = action.payload;
-
-        state.user = user || null;
-
-        /*
-         * If registration also returns an access token,
-         * store it in memory.
-         *
-         * If registration only creates the account,
-         * access will simply be undefined.
-         */
-        if (access) {
-          setAccessToken(access);
-        }
-
-        state.isAuthenticated = Boolean(access);
       })
 
       .addCase(registerUser.rejected, (state, action) => {

@@ -8,8 +8,12 @@ const Dashboard = () => {
   const user = useSelector(selectUser);
 
   const handleLogout = async () => {
-    await dispatch(logoutUser());
-    navigate('/login');
+    try {
+      await dispatch(logoutUser()).unwrap();
+       navigate('/login', { replace: true });
+    } catch (error) {
+ console.error('Logout failed:', error);
+    } 
   };
 
   return (
